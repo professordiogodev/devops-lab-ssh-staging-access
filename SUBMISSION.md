@@ -4,7 +4,7 @@ Fork URL: <!-- paste the URL of your fork here -->
 
 ## Files to commit
 
-- [ ] `ssh_config_snippet`: the `Host clipstr-staging` block from your `~/.ssh/config`, committed (never commit private keys)
+- [ ] `ssh_config_snippet`: the `Host clippy-staging` block from your `~/.ssh/config`, committed (never commit private keys)
 - [ ] `tunnel.txt`: the response you got from the private dashboard through your tunnel
 
 ## Questions
@@ -29,7 +29,7 @@ Answer in your own words. Where a question asks for output, paste it in a code b
 
 <!-- replace this line with your answer -->
 
-### Q4. Explain what `ssh -L 8000:127.0.0.2:9000 clipstr-staging` does, who connects to whom, and why a tunnel is better than opening port 9000 in the firewall.
+### Q4. Explain what `ssh -L 8000:127.0.0.2:9000 clippy-staging` does, who connects to whom, and why a tunnel is better than opening port 9000 in the firewall.
 
 **Your answer:**
 

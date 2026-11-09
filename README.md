@@ -24,7 +24,7 @@
 
 <p align="center"><img src="assets/gifs/situation.gif" width="300" alt=""></p>
 
-Wednesday. You join the Clipstr on-call rotation and the CTO hands you a sticky note: *"staging, user deploy, password clipstr-deploy."* A password on a sticky note, for a server that has a release on it. Today you will do what every engineer does on day one: get proper access with a **key**, then close the door behind you so nobody else can use a password.
+Wednesday. You join the Clippy on-call rotation and the CTO hands you a sticky note: *"staging, user deploy, password clippy-deploy."* A password on a sticky note, for a server that has a release on it. Today you will do what every engineer does on day one: get proper access with a **key**, then close the door behind you so nobody else can use a password.
 
 Then comes the real work: ship the release file, and look at a private dashboard that is deliberately not exposed to the internet.
 
@@ -48,7 +48,7 @@ Fork this repository, clone your fork, and run:
 sudo ./setup.sh
 ```
 
-The staging server listens on `127.0.0.1` port **2222**. Your user there is `deploy`. In a second terminal, follow the server log: `sudo tail -f /var/log/clipstr-sshd.log`. Keep it open for the whole lab.
+The staging server listens on `127.0.0.1` port **2222**. Your user there is `deploy`. In a second terminal, follow the server log: `sudo tail -f /var/log/clippy-sshd.log`. Keep it open for the whole lab.
 
 <p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
@@ -57,7 +57,7 @@ The staging server listens on `127.0.0.1` port **2222**. Your user there is `dep
 <p align="center"><img src="assets/gifs/recon.gif" width="300" alt=""></p>
 
 1. Log in with the password: `ssh -p 2222 deploy@127.0.0.1`. Accept the host key. Look at the fingerprint message and at the log line the server wrote. What did you just do when you typed `yes`?
-2. Look at the server's settings: `sudo sshd -T -f /etc/clipstr-lab/sshd_config | grep -Ei 'passwordauth|permitroot|allowusers|x11|kbdinteractive'`. Which of these settings would an auditor flag?
+2. Look at the server's settings: `sudo sshd -T -f /etc/clippy-lab/sshd_config | grep -Ei 'passwordauth|permitroot|allowusers|x11|kbdinteractive'`. Which of these settings would an auditor flag?
 3. On the server, what is the owner and mode of `~/.ssh`? (`ls -ld ~/.ssh` once logged in). Do not change it yet.
 
 > [!NOTE]
@@ -67,7 +67,7 @@ The staging server listens on `127.0.0.1` port **2222**. Your user there is `dep
 
 ## Part 2 - Build: keys instead of passwords
 
-1. Generate an **ed25519** key pair on your machine: `ssh-keygen -t ed25519 -C "you@clipstr"`. Use a passphrase. Look at the two files created in `~/.ssh`. Which is safe to share? What mode does the private key have?
+1. Generate an **ed25519** key pair on your machine: `ssh-keygen -t ed25519 -C "you@clippy"`. Use a passphrase. Look at the two files created in `~/.ssh`. Which is safe to share? What mode does the private key have?
 2. Install the public key on the server: `ssh-copy-id -p 2222 deploy@127.0.0.1` (uses the password this one last time).
 3. Try to log in again.
 
@@ -77,7 +77,7 @@ The staging server listens on `127.0.0.1` port **2222**. Your user there is `dep
 It will not. This is the best part of the lab. Investigate it from **both sides**:
 
 - Client: `ssh -vv -p 2222 deploy@127.0.0.1`. Find the lines where it offers your key and the server answers.
-- Server: read the last lines of `/var/log/clipstr-sshd.log`. Find the sentence with `bad ownership or modes`.
+- Server: read the last lines of `/var/log/clippy-sshd.log`. Find the sentence with `bad ownership or modes`.
 
 > [!WARNING]
 > **Break it** Fix it the way a professional would: the server's `~/.ssh` directory must be `700` and `authorized_keys` `600`, owned by `deploy`. Why does sshd *refuse* a key when the directory is writable by others? Who could abuse that?
@@ -89,20 +89,20 @@ Verify with `ssh -p 2222 deploy@127.0.0.1` again. Passwordless login means you a
 Add this block to your `~/.ssh/config` (create the file with mode `600`) and save a copy of the block as `ssh_config_snippet` in this repo:
 
 ```text
-Host clipstr-staging
+Host clippy-staging
     HostName 127.0.0.1
     Port 2222
     User deploy
     IdentityFile ~/.ssh/id_ed25519
 ```
 
-Now `ssh clipstr-staging` is enough. **Never commit your private key.** `verify.sh` checks.
+Now `ssh clippy-staging` is enough. **Never commit your private key.** `verify.sh` checks.
 
 <p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 3 - Lock the door
 
-Edit the server's configuration at `/etc/clipstr-lab/sshd_config` (use `sudo`). Make these changes:
+Edit the server's configuration at `/etc/clippy-lab/sshd_config` (use `sudo`). Make these changes:
 
 - `PasswordAuthentication no`
 - `PermitRootLogin no`
@@ -117,8 +117,8 @@ You will find one more method still on: `keyboard-interactive`. With PAM enabled
 **The safe order is what this part trains:**
 
 1. **Keep your current session open.**
-2. Test the new config **before** applying it: `sudo sshd -t -f /etc/clipstr-lab/sshd_config` (no output means valid).
-3. Reload without dropping sessions: `sudo kill -HUP $(cat /run/clipstr-sshd.pid)`.
+2. Test the new config **before** applying it: `sudo sshd -t -f /etc/clippy-lab/sshd_config` (no output means valid).
+3. Reload without dropping sessions: `sudo kill -HUP $(cat /run/clippy-sshd.pid)`.
 4. Open a **second** session and confirm you can still log in before you close the first.
 
 > [!NOTE]
@@ -128,10 +128,10 @@ You will find one more method still on: `keyboard-interactive`. With PAM enabled
 
 ## Part 4 - Ship the release
 
-The release file is `release/clipstr-1.4.0.tar.gz` in this repo.
+The release file is `release/clippy-1.4.0.tar.gz` in this repo.
 
-1. Copy it to `~/uploads/` on the server with `scp clipstr-staging:`-style syntax.
-2. Prove it arrived intact: compute `sha256sum` on your side and on the server (run it remotely: `ssh clipstr-staging 'sha256sum uploads/clipstr-1.4.0.tar.gz'`). Compare. Save both lines for your submission.
+1. Copy it to `~/uploads/` on the server with `scp clippy-staging:`-style syntax.
+2. Prove it arrived intact: compute `sha256sum` on your side and on the server (run it remotely: `ssh clippy-staging 'sha256sum uploads/clippy-1.4.0.tar.gz'`). Compare. Save both lines for your submission.
 3. Do it again with `rsync -avz --progress`. Run it twice. What does the second run do differently, and why does that matter for a 2 GB file?
 
 <p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
@@ -141,7 +141,7 @@ The release file is `release/clipstr-1.4.0.tar.gz` in this repo.
 The server runs an internal dashboard on `127.0.0.2:9000`, meant only for people on the private network. Pretend you cannot reach that address from your laptop (do not curl it directly).
 
 ```bash
-ssh -f -N -L 8000:127.0.0.2:9000 clipstr-staging
+ssh -f -N -L 8000:127.0.0.2:9000 clippy-staging
 curl http://localhost:8000
 ```
 
@@ -179,9 +179,9 @@ Resources left behind cost money, keep doors open and pollute the next lab. Remo
 
 Do this **last**, after you have pasted your `verify` output into `SUBMISSION.md` (once you tear down, the lab can no longer be verified).
 
-1. Run `sudo ./teardown.sh`. It stops the lab SSH daemon and the dashboard and removes the `deploy` user and `/etc/clipstr-lab`.
+1. Run `sudo ./teardown.sh`. It stops the lab SSH daemon and the dashboard and removes the `deploy` user and `/etc/clippy-lab`.
 2. Close the tunnel if it is still open: `pkill -f 'ssh -f -N -L 8000'`.
-3. Remove the `Host clipstr-staging` block from **your own** `~/.ssh/config` and run `ssh-keygen -R "[127.0.0.1]:2222"` to forget the lab server's host key. (Your key pair itself is yours to keep.)
+3. Remove the `Host clippy-staging` block from **your own** `~/.ssh/config` and run `ssh-keygen -R "[127.0.0.1]:2222"` to forget the lab server's host key. (Your key pair itself is yours to keep.)
 
 Then run the proof:
 
@@ -199,7 +199,7 @@ Answer the questions in `SUBMISSION.md` in **your fork** (paste output in code b
 
 **Files to commit**
 
-- `ssh_config_snippet`: the `Host clipstr-staging` block from your `~/.ssh/config`, committed (never commit private keys)
+- `ssh_config_snippet`: the `Host clippy-staging` block from your `~/.ssh/config`, committed (never commit private keys)
 - `tunnel.txt`: the response you got from the private dashboard through your tunnel
 
 **Questions to answer**
@@ -207,7 +207,7 @@ Answer the questions in `SUBMISSION.md` in **your fork** (paste output in code b
 1. Your key was refused at first. Paste the line from the server log that explained why, and the command that fixed it. Which `ssh` flag showed you the client side of the story?
 2. What is the difference between your public key and your private key? Which file must never leave your machine, and what mode must it have?
 3. You disabled password login. In which order did you do the steps so you could not lock yourself out, and what would you have done if you had locked yourself out of a real server?
-4. Explain what `ssh -L 8000:127.0.0.2:9000 clipstr-staging` does, who connects to whom, and why a tunnel is better than opening port 9000 in the firewall.
+4. Explain what `ssh -L 8000:127.0.0.2:9000 clippy-staging` does, who connects to whom, and why a tunnel is better than opening port 9000 in the firewall.
 5. How did you verify the transferred file was intact? Paste the checksums on both sides.
 6. Paste the output of `sudo ./verify.sh`. It must end with **ALL CHECKS PASSED**.
 7. **Tear down.** Paste the output of `sudo ./verify-teardown.sh`. It must end with **TEARDOWN VERIFIED**.
