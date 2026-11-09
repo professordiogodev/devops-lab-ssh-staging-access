@@ -3,3 +3,4 @@
 *.tfstate*
 .env
 __pycache__/
+release/
