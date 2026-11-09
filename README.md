@@ -1,6 +1,4 @@
-# SSH: Get Into the Staging Server (and Lock the Door)
-
-You are given a password and a staging server. Replace the password with a key, fix the lockout you will hit, harden the server, transfer a release and reach a private dashboard through a tunnel.
+<p align="center"><img src="assets/banner.svg" alt="SSH: Get Into the Staging Server (and Lock the Door)" width="100%"></p>
 
 | | |
 |-|-|
@@ -17,9 +15,10 @@ You are given a password and a staging server. Replace the password with a key, 
 5. Commit and push. Open the **Actions** tab of your fork (click *I understand my workflows, go ahead and enable them* the first time). The **Lab check** shows what is still missing.
 6. When the check is green, **submit the URL of your fork** in the course platform.
 
+> [!NOTE]
 > The check only looks at your answers and any files the lab asks you to commit. Your instructor reads your work and may ask you to explain any line.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## The situation
 
@@ -27,6 +26,7 @@ Wednesday. You join the Clipstr on-call rotation and the CTO hands you a sticky 
 
 Then comes the real work: ship the release file, and look at a private dashboard that is deliberately not exposed to the internet.
 
+> [!IMPORTANT]
 > **Your mission**
 > - Log in with the password once, then replace it with an **SSH key**
 > - Diagnose why your key is refused (it will be refused)
@@ -36,7 +36,7 @@ Then comes the real work: ship the release file, and look at a private dashboard
 
 **Time:** 60-75 min | **Cost:** free | **You need:** your Ubuntu environment (WSL or OrbStack machine) with `sudo`. The "server" is a second SSH daemon on port 2222 of your own machine, `sudo ./teardown.sh` removes it.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 0 - Set the scene
 
@@ -48,7 +48,7 @@ sudo ./setup.sh
 
 The staging server listens on `127.0.0.1` port **2222**. Your user there is `deploy`. In a second terminal, follow the server log: `sudo tail -f /var/log/clipstr-sshd.log`. Keep it open for the whole lab.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 1 - Recon: the old way
 
@@ -56,9 +56,10 @@ The staging server listens on `127.0.0.1` port **2222**. Your user there is `dep
 2. Look at the server's settings: `sudo sshd -T -f /etc/clipstr-lab/sshd_config | grep -Ei 'passwordauth|permitroot|allowusers|x11|kbdinteractive'`. Which of these settings would an auditor flag?
 3. On the server, what is the owner and mode of `~/.ssh`? (`ls -ld ~/.ssh` once logged in). Do not change it yet.
 
+> [!NOTE]
 > **Think** Why is a password on a sticky note worse than a password in a password manager, and a password in a password manager worse than a key?
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 2 - Build: keys instead of passwords
 
@@ -66,6 +67,7 @@ The staging server listens on `127.0.0.1` port **2222**. Your user there is `dep
 2. Install the public key on the server: `ssh-copy-id -p 2222 deploy@127.0.0.1` (uses the password this one last time).
 3. Try to log in again.
 
+> [!NOTE]
 > **Predict** The key is now on the server. Will `ssh -p 2222 deploy@127.0.0.1` log you in without asking for the password? Write your answer first.
 
 It will not. This is the best part of the lab. Investigate it from **both sides**:
@@ -73,6 +75,7 @@ It will not. This is the best part of the lab. Investigate it from **both sides*
 - Client: `ssh -vv -p 2222 deploy@127.0.0.1`. Find the lines where it offers your key and the server answers.
 - Server: read the last lines of `/var/log/clipstr-sshd.log`. Find the sentence with `bad ownership or modes`.
 
+> [!WARNING]
 > **Break it** Fix it the way a professional would: the server's `~/.ssh` directory must be `700` and `authorized_keys` `600`, owned by `deploy`. Why does sshd *refuse* a key when the directory is writable by others? Who could abuse that?
 
 Verify with `ssh -p 2222 deploy@127.0.0.1` again. Passwordless login means you are done with this part.
@@ -91,7 +94,7 @@ Host clipstr-staging
 
 Now `ssh clipstr-staging` is enough. **Never commit your private key.** `verify.sh` checks.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 3 - Lock the door
 
@@ -102,6 +105,7 @@ Edit the server's configuration at `/etc/clipstr-lab/sshd_config` (use `sudo`). 
 - `AllowUsers deploy`
 - `X11Forwarding no`
 
+> [!NOTE]
 > **Predict** After you reload, a bot tries `ssh -o PreferredAuthentications=password deploy@127.0.0.1` with the right password. Will it get in? Try it. Read the error. The message lists the methods the server still accepts.
 
 You will find one more method still on: `keyboard-interactive`. With PAM enabled it can bring passwords back through the side door. Find the directive that turns it off (`KbdInteractiveAuthentication`) and fix it. Re-test until the error says only `publickey`.
@@ -113,9 +117,10 @@ You will find one more method still on: `keyboard-interactive`. With PAM enabled
 3. Reload without dropping sessions: `sudo kill -HUP $(cat /run/clipstr-sshd.pid)`.
 4. Open a **second** session and confirm you can still log in before you close the first.
 
+> [!NOTE]
 > **Think** You skipped step 2 and the config had a typo. What happens to the daemon, and why is the first open session your lifeline? On a cloud server with no console access, how could this still end in a rebuilt machine?
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 4 - Ship the release
 
@@ -125,7 +130,7 @@ The release file is `release/clipstr-1.4.0.tar.gz` in this repo.
 2. Prove it arrived intact: compute `sha256sum` on your side and on the server (run it remotely: `ssh clipstr-staging 'sha256sum uploads/clipstr-1.4.0.tar.gz'`). Compare. Save both lines for your submission.
 3. Do it again with `rsync -avz --progress`. Run it twice. What does the second run do differently, and why does that matter for a 2 GB file?
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 5 - The private dashboard (tunnels)
 
@@ -140,9 +145,10 @@ curl http://localhost:8000
 2. Find the tunnel on your machine: `ss -ltnp | grep 8000`. Which process owns the port?
 3. Close it: `pkill -f 'ssh -f -N -L 8000'`. Does `curl localhost:8000` still work?
 
+> [!NOTE]
 > **Think** Compare opening port 9000 on the firewall with using this tunnel. What can an attacker do in each case? What would you use if the whole team needed access every day?
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 6 - Prove it
 
@@ -150,7 +156,7 @@ curl http://localhost:8000
 sudo ./verify.sh
 ```
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Level up (optional)
 
