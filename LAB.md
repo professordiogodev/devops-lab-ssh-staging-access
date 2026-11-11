@@ -2,9 +2,11 @@
 
 ## The situation
 
-Wednesday. You join the Clippy on-call rotation and the CTO hands you a sticky note: *"staging, user deploy, password clippy-deploy."* A password on a sticky note, for a server that has a release on it. Today you will do what every engineer does on day one: get proper access with a **key**, then close the door behind you so nobody else can use a password.
+Your mentor opens a terminal next to yours and slides over a sticky note: *"staging, user deploy, password clippy-deploy."*
 
-Then comes the real work: ship the release file, and look at a private dashboard that is deliberately not exposed to the internet.
+*"This is how we all started,"* the mentor says. *"A password on a note, for a server that has a release on it. Today you do what every engineer does on day one: get proper access with a **key**, then close the door behind you so nobody else can use a password. I will sit here and ask questions, but you type."*
+
+The session has two acts. In **Act 1** you get in properly: log in once with the password, replace it with an SSH key, and find out why your key is refused (it will be). In **Act 2** you lock the door without locking yourself out, ship the release file, and look at a private dashboard that is deliberately not exposed to the internet.
 
 > **Your mission**
 > - Log in with the password once, then replace it with an **SSH key**
@@ -17,7 +19,7 @@ Then comes the real work: ship the release file, and look at a private dashboard
 
 ---
 
-## Part 0 - Set the scene
+## Part 0 - Act 1: set the scene
 
 Fork this repository, clone your fork, and run:
 
@@ -72,7 +74,7 @@ Now `ssh clippy-staging` is enough. **Never commit your private key.** `verify.s
 
 ---
 
-## Part 3 - Lock the door
+## Part 3 - Act 2: lock the door
 
 Edit the server's configuration at `/etc/clippy-lab/sshd_config` (use `sudo`). Make these changes:
 
